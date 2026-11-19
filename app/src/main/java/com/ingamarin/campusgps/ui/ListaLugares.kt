@@ -13,12 +13,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,7 +44,15 @@ fun ListaLugares(
     onClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val estadoLista = rememberLazyListState()
+
+    // Si cambia el primero (nuevo orden), la lista vuelve arriba para que se vea el mas cercano
+    LaunchedEffect(lugares.firstOrNull()?.lugar?.id) {
+        estadoLista.scrollToItem(0)
+    }
+
     LazyColumn(
+        state = estadoLista,
         modifier = modifier,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
