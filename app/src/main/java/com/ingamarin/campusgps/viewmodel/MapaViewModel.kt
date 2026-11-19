@@ -4,10 +4,12 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ingamarin.campusgps.data.LugaresRepository
+import com.ingamarin.campusgps.data.UbicacionNoDisponibleException
 import com.ingamarin.campusgps.data.UbicacionRepository
 import com.ingamarin.campusgps.model.Lugar
 import com.ingamarin.campusgps.model.LugarConDistancia
 import com.ingamarin.campusgps.model.Posicion
+import com.ingamarin.campusgps.model.TipoError
 import com.ingamarin.campusgps.model.UbicacionUi
 import com.ingamarin.campusgps.util.distanciaMetros
 import com.ingamarin.campusgps.util.formatearDistancia
@@ -39,6 +41,14 @@ class MapaViewModel(
     val seleccionado: StateFlow<Int?> = _seleccionado.asStateFlow()
 
     fun buscar() {
+        // Sin Play Services no hay ubicacion: se avisa sin intentar
+        if (!ubicacionRepo.playServicesDisponible()) {
+            _estado.value = UbicacionUi.Error(
+                "Este dispositivo no tiene Google Play Services",
+                TipoError.SIN_PLAY_SERVICES
+            )
+            return
+        }
         _estado.value = UbicacionUi.Buscando
         viewModelScope.launch {
             ubicacionRepo.obtenerPosicion()
@@ -46,7 +56,7 @@ class MapaViewModel(
                     _estado.value = UbicacionUi.Lista(it)
                     actualizarDistancias(it)
                 }
-                .onFailure { _estado.value = UbicacionUi.Error(mensajeDe(it)) }
+                .onFailure { _estado.value = errorDe(it) }
         }
     }
 
@@ -59,7 +69,10 @@ class MapaViewModel(
     }
 
     fun permisoDenegado() {
-        _estado.value = UbicacionUi.Error("Sin permiso de ubicación no puedo mostrar dónde estás")
+        _estado.value = UbicacionUi.Error(
+            "Sin permiso de ubicación no puedo mostrar dónde estás",
+            TipoError.SIN_PERMISO
+        )
     }
 
     /** Lugar elegido en la lista (o con el boton del mas cercano). null = ninguno. */
@@ -72,8 +85,13 @@ class MapaViewModel(
         .map { lista -> lista.firstOrNull { it.metros != null }?.lugar }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    private fun mensajeDe(e: Throwable): String = when (e) {
-        is SecurityException -> "Falta el permiso de ubicación"
-        else -> e.message ?: "No se pudo obtener la ubicación"
+    /** Convierte la excepcion del Repository en un estado de error con su tipo. */
+    private fun errorDe(e: Throwable): UbicacionUi.Error = when (e) {
+        is SecurityException -> UbicacionUi.Error("Falta el permiso de ubicación", TipoError.SIN_PERMISO)
+        is UbicacionNoDisponibleException -> UbicacionUi.Error(
+            "No se pudo obtener la ubicación. Activa el GPS e intenta de nuevo",
+            TipoError.GPS_APAGADO
+        )
+        else -> UbicacionUi.Error(e.message ?: "No se pudo obtener la ubicación", TipoError.OTRO)
     }
 }

@@ -1,7 +1,10 @@
 package com.ingamarin.campusgps.ui
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -48,6 +51,15 @@ fun PantallaMapa(vm: MapaViewModel) {
     ) { resultado ->
         // Basta con que acepte uno (precisa o aproximada)
         if (resultado.values.any { it }) vm.buscar() else vm.permisoDenegado()
+    }
+
+    // Abre la pantalla de ajustes de ESTA app (para dar el permiso a mano)
+    fun abrirAjustes() {
+        val intent = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", contexto.packageName, null)
+        )
+        contexto.startActivity(intent)
     }
 
     fun alPulsar() {
@@ -130,7 +142,11 @@ fun PantallaMapa(vm: MapaViewModel) {
                         "Lat: %.5f · Lng: %.5f".format(e.posicion.latitud, e.posicion.longitud),
                         style = MaterialTheme.typography.bodyMedium
                     )
-                    is UbicacionUi.Error -> Text(e.mensaje, color = MaterialTheme.colorScheme.error)
+                    is UbicacionUi.Error -> MensajeError(
+                        error = e,
+                        onAbrirAjustes = { abrirAjustes() },
+                        onReintentar = { alPulsar() }
+                    )
                 }
             }
 
