@@ -27,6 +27,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,12 +58,26 @@ fun PantallaMapa(vm: MapaViewModel) {
     val masCercano by vm.masCercano.collectAsStateWithLifecycle()
     val contexto = LocalContext.current
 
+    fun tienePermisoUbicacion(): Boolean = listOf(
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.ACCESS_COARSE_LOCATION
+    ).any { ContextCompat.checkSelfPermission(contexto, it) == PackageManager.PERMISSION_GRANTED }
+
+    // Mejora IA 3: si hay permiso, el mapa muestra el punto azul nativo y su boton
+    var permisoConcedido by remember { mutableStateOf(tienePermisoUbicacion()) }
+
+    // Se revisa cada vez que la app vuelve al frente (por ejemplo, despues de "Abrir ajustes")
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        permisoConcedido = tienePermisoUbicacion()
+    }
+
     // Pide FINE y COARSE a la vez. Android dibuja el cuadro; aqui solo recibimos la respuesta
     val lanzador = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { resultado ->
         // Basta con que acepte uno (precisa o aproximada)
-        if (resultado.values.any { it }) vm.buscar() else vm.permisoDenegado()
+        permisoConcedido = resultado.values.any { it }
+        if (permisoConcedido) vm.buscar() else vm.permisoDenegado()
     }
 
     // Abre la pantalla de ajustes de ESTA app (para dar el permiso a mano)
@@ -71,12 +90,7 @@ fun PantallaMapa(vm: MapaViewModel) {
     }
 
     fun alPulsar() {
-        val tienePermiso = listOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        ).any { ContextCompat.checkSelfPermission(contexto, it) == PackageManager.PERMISSION_GRANTED }
-
-        if (tienePermiso) {
+        if (tienePermisoUbicacion()) {
             vm.buscar()   // ya lo tiene: no vuelve a preguntar
         } else {
             lanzador.launch(
@@ -130,6 +144,7 @@ fun PantallaMapa(vm: MapaViewModel) {
                 seleccionado = seleccionado,
                 masCercanoId = masCercano?.id,
                 radioMetros = radio,
+                mostrarMiUbicacion = permisoConcedido,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
