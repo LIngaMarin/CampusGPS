@@ -5,10 +5,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.Circle
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
@@ -28,6 +30,7 @@ fun MapaUbicacion(
     lugares: List<LugarConDistancia>,
     seleccionado: Int?,
     masCercanoId: Int?,
+    radioMetros: Int,
     modifier: Modifier = Modifier
 ) {
     val camara = rememberCameraPositionState {
@@ -61,6 +64,14 @@ fun MapaUbicacion(
             Marker(
                 state = remember(aqui) { MarkerState(position = aqui) },
                 title = "Estás aquí"
+            )
+            // Circulo del radio de cercania alrededor de mi posicion
+            Circle(
+                center = aqui,
+                radius = radioMetros.toDouble(),
+                strokeColor = Color(0xFF1E6FB8),
+                strokeWidth = 4f,
+                fillColor = Color(0x331E6FB8)
             )
         }
         // Un marcador por lugar: azul, y el mas cercano en verde (key = id para que Compose los identifique)

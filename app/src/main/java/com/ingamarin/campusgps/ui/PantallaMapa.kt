@@ -47,6 +47,8 @@ fun PantallaMapa(vm: MapaViewModel) {
     val lugares by vm.lugares.collectAsStateWithLifecycle()
     val lugaresVisibles by vm.lugaresVisibles.collectAsStateWithLifecycle()
     val categoria by vm.categoria.collectAsStateWithLifecycle()
+    val radio by vm.radio.collectAsStateWithLifecycle()
+    val idsDentroDelRadio by vm.idsDentroDelRadio.collectAsStateWithLifecycle()
     val seleccionado by vm.seleccionado.collectAsStateWithLifecycle()
     val masCercano by vm.masCercano.collectAsStateWithLifecycle()
     val contexto = LocalContext.current
@@ -127,6 +129,7 @@ fun PantallaMapa(vm: MapaViewModel) {
                 lugares = lugaresVisibles,
                 seleccionado = seleccionado,
                 masCercanoId = masCercano?.id,
+                radioMetros = radio,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
@@ -135,10 +138,25 @@ fun PantallaMapa(vm: MapaViewModel) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
+                // Selector del radio de cercania
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("Radio:", style = MaterialTheme.typography.bodyMedium)
+                    vm.radiosDisponibles.forEach { r ->
+                        FilterChip(
+                            selected = radio == r,
+                            onClick = { vm.seleccionarRadio(r) },
+                            label = { Text("$r m") }
+                        )
+                    }
+                }
+
                 Button(
                     onClick = { alPulsar() },
                     enabled = estado !is UbicacionUi.Buscando
@@ -183,6 +201,7 @@ fun PantallaMapa(vm: MapaViewModel) {
                 lugares = lugaresVisibles,
                 seleccionado = seleccionado,
                 masCercanoId = masCercano?.id,
+                dentroDelRadio = idsDentroDelRadio,
                 onClick = { vm.seleccionar(it) },
                 modifier = Modifier
                     .fillMaxWidth()

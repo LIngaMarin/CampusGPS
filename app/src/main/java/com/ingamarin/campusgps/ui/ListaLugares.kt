@@ -41,6 +41,7 @@ fun ListaLugares(
     lugares: List<LugarConDistancia>,
     seleccionado: Int?,
     masCercanoId: Int?,
+    dentroDelRadio: Set<Int>,
     onClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -62,6 +63,7 @@ fun ListaLugares(
                 item = item,
                 seleccionada = item.lugar.id == seleccionado,
                 esMasCercano = item.lugar.id == masCercanoId,
+                enRadio = item.lugar.id in dentroDelRadio,
                 onClick = { onClick(item.lugar.id) }
             )
         }
@@ -73,6 +75,7 @@ private fun TarjetaLugar(
     item: LugarConDistancia,
     seleccionada: Boolean,
     esMasCercano: Boolean,
+    enRadio: Boolean,
     onClick: () -> Unit
 ) {
     val colores = MaterialTheme.colorScheme
@@ -102,11 +105,21 @@ private fun TarjetaLugar(
                     color = colores.onSurfaceVariant
                 )
             }
-            Text(
-                text = item.metros?.let { formatearDistancia(it) } ?: "Sin calcular",
-                fontWeight = FontWeight.Bold,
-                color = colores.primary
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = item.metros?.let { formatearDistancia(it) } ?: "Sin calcular",
+                    fontWeight = FontWeight.Bold,
+                    color = colores.primary
+                )
+                if (enRadio) {
+                    Text(
+                        "En el radio",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VerdeMarcador,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
         }
     }
 }
