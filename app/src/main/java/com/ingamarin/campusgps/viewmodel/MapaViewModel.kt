@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -78,6 +79,25 @@ class MapaViewModel(
     /** Lugar elegido en la lista (o con el boton del mas cercano). null = ninguno. */
     fun seleccionar(id: Int?) {
         _seleccionado.value = id
+    }
+
+    // ---------- Mejora IA 1: filtro por categoria ----------
+    /** Categorias que existen, en el orden de los datos (Estudio, Comida, Eventos, Servicios). */
+    val categorias: List<String> = lugaresRepo.obtenerLugares().map { it.categoria }.distinct()
+
+    private val _categoria = MutableStateFlow<String?>(null)   // null = Todas
+    val categoria: StateFlow<String?> = _categoria.asStateFlow()
+
+    /**
+     * Lo que se ve en el mapa y en la lista. Es aparte de [lugares] para que el filtro
+     * no cambie cual es el lugar mas cercano del campus.
+     */
+    val lugaresVisibles: StateFlow<List<LugarConDistancia>> = combine(lugares, _categoria) { lista, cat ->
+        if (cat == null) lista else lista.filter { it.lugar.categoria == cat }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _lugares.value)
+
+    fun filtrarPorCategoria(categoria: String?) {
+        _categoria.value = categoria
     }
 
     /** El primero de la lista ordenada que ya tiene distancia. null mientras no hay ubicacion. */

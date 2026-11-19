@@ -8,7 +8,9 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -24,6 +27,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -41,6 +45,8 @@ import com.ingamarin.campusgps.viewmodel.MapaViewModel
 fun PantallaMapa(vm: MapaViewModel) {
     val estado by vm.estado.collectAsStateWithLifecycle()
     val lugares by vm.lugares.collectAsStateWithLifecycle()
+    val lugaresVisibles by vm.lugaresVisibles.collectAsStateWithLifecycle()
+    val categoria by vm.categoria.collectAsStateWithLifecycle()
     val seleccionado by vm.seleccionado.collectAsStateWithLifecycle()
     val masCercano by vm.masCercano.collectAsStateWithLifecycle()
     val contexto = LocalContext.current
@@ -93,10 +99,32 @@ fun PantallaMapa(vm: MapaViewModel) {
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            // Chips de categoria (Todas + una por categoria)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = categoria == null,
+                    onClick = { vm.filtrarPorCategoria(null) },
+                    label = { Text("Todas") }
+                )
+                vm.categorias.forEach { c ->
+                    FilterChip(
+                        selected = categoria == c,
+                        onClick = { vm.filtrarPorCategoria(c) },
+                        label = { Text(c) }
+                    )
+                }
+            }
+
             // El mapa ocupa todo el espacio libre de arriba
             MapaUbicacion(
                 estado = estado,
-                lugares = lugares,
+                lugares = lugaresVisibles,
                 seleccionado = seleccionado,
                 masCercanoId = masCercano?.id,
                 modifier = Modifier
@@ -152,7 +180,7 @@ fun PantallaMapa(vm: MapaViewModel) {
 
             // Lista de lugares con altura fija debajo del mapa
             ListaLugares(
-                lugares = lugares,
+                lugares = lugaresVisibles,
                 seleccionado = seleccionado,
                 masCercanoId = masCercano?.id,
                 onClick = { vm.seleccionar(it) },
