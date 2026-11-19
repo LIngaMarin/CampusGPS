@@ -1,11 +1,15 @@
 package com.ingamarin.campusgps.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ingamarin.campusgps.data.LugaresRepository
 import com.ingamarin.campusgps.data.UbicacionRepository
 import com.ingamarin.campusgps.model.LugarConDistancia
+import com.ingamarin.campusgps.model.Posicion
 import com.ingamarin.campusgps.model.UbicacionUi
+import com.ingamarin.campusgps.util.distanciaMetros
+import com.ingamarin.campusgps.util.formatearDistancia
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,10 +40,18 @@ class MapaViewModel(
             ubicacionRepo.obtenerPosicion()
                 .onSuccess {
                     _estado.value = UbicacionUi.Lista(it)
-                    // TODO Paso 5: actualizarDistancias(it)
+                    actualizarDistancias(it)
                 }
                 .onFailure { _estado.value = UbicacionUi.Error(mensajeDe(it)) }
         }
+    }
+
+    /** Calcula la distancia a cada lugar, ordena de menor a mayor y publica la lista. */
+    private fun actualizarDistancias(posicion: Posicion) {
+        _lugares.value = lugaresRepo.obtenerLugares()
+            .map { LugarConDistancia(it, distanciaMetros(posicion, it)) }
+            .sortedBy { it.metros }
+        _lugares.value.forEach { Log.d("DISTANCIA", "${it.lugar.nombre}: ${it.metros?.let(::formatearDistancia)}") }
     }
 
     fun permisoDenegado() {
