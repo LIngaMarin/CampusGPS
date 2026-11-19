@@ -27,8 +27,9 @@ import androidx.compose.ui.unit.dp
 import com.ingamarin.campusgps.model.LugarConDistancia
 import com.ingamarin.campusgps.util.formatearDistancia
 
-/** Color del punto de la tarjeta (el mismo azul de los marcadores del mapa). */
+/** Colores del punto de la tarjeta: los mismos de los marcadores del mapa. */
 private val AzulMarcador = Color(0xFF2E8BE6)
+private val VerdeMarcador = Color(0xFF2EAA4F)
 
 /**
  * Lista de lugares. No conoce el ViewModel: recibe los datos y avisa el toque con onClick.
@@ -37,6 +38,7 @@ private val AzulMarcador = Color(0xFF2E8BE6)
 fun ListaLugares(
     lugares: List<LugarConDistancia>,
     seleccionado: Int?,
+    masCercanoId: Int?,
     onClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -49,6 +51,7 @@ fun ListaLugares(
             TarjetaLugar(
                 item = item,
                 seleccionada = item.lugar.id == seleccionado,
+                esMasCercano = item.lugar.id == masCercanoId,
                 onClick = { onClick(item.lugar.id) }
             )
         }
@@ -59,6 +62,7 @@ fun ListaLugares(
 private fun TarjetaLugar(
     item: LugarConDistancia,
     seleccionada: Boolean,
+    esMasCercano: Boolean,
     onClick: () -> Unit
 ) {
     val colores = MaterialTheme.colorScheme
@@ -77,7 +81,7 @@ private fun TarjetaLugar(
             Box(
                 Modifier
                     .size(10.dp)
-                    .background(AzulMarcador, CircleShape)
+                    .background(if (esMasCercano) VerdeMarcador else AzulMarcador, CircleShape)
             )
             Box(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
